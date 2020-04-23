@@ -25,7 +25,7 @@
 
 - name: Create catch all configuration
   template:
-    src: '01_exim4-config_catch_all'
+    src: 'conf.d/router/01_exim4-config_catch_all'
     dest: "{{ exim_path }}/conf.d/router/01_exim4-config_catch_all"
   when: (exim4_catch_all_email is defined) and exim4_catch_all_email
   tags:
@@ -50,3 +50,35 @@
   tags:
     - exim
   notify: update exim4.conf
+
+- name: Configure ACLs and main configuration
+  template:
+    src: "conf.d/{{ item }}"
+    dest: "{{ exim_path }}/conf.d/{{ item }}"
+  with_items:
+    - acl/30_exim4-config_check_rcpt
+    - acl/31_exim4-config_check_not_smtp
+    - main/03_exim4-config_extra_options
+  tags:
+    - exim
+  notify: update exim4.conf
+
+- name: Set /etc/mailname
+  template:
+    src: "etcmailname.j2"
+    dest: "/etc/mailname"
+  tags:
+    - exim
+  notify: update exim4.conf
+
+- name: Setup aliases
+  lineinfile:
+    dest: '/etc/aliases'
+    regexp: '^{{ item.user }}:'
+    line: '{{ item.user }}: {{ item.alias }}'
+    backup: yes
+  with_items: "{{ exim4_aliases }}"
+  tags:
+    - exim
+  when: exim4_aliases > 0
+  notify: update exim4.aliases

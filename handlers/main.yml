@@ -8,3 +8,7 @@
 - name: restart exim4
   action: service name=exim4 state=restarted
   become: true
+
+- name: update exim4.aliases
+  shell: newaliases
+  become: true
